@@ -1,0 +1,6 @@
+import mongoose, { Schema } from "mongoose";
+const EventSchema = new Schema({ organizerId: { type: String, required: true, index: true }, organizerName: { type: String, required: true }, title: { type: String, required: true, trim: true }, description: { type: String, required: true }, startsAt: { type: Date, required: true, index: true }, timeZone: { type: String, required: true }, venue: { type: String, required: true }, capacity: { type: Number, required: true, min: 1 }, activeCount: { type: Number, default: 0, min: 0 }, status: { type: String, enum: ["draft", "published", "canceled"], default: "draft", index: true } }, { timestamps: true });
+const RegistrationSchema = new Schema({ eventId: { type: Schema.Types.ObjectId, ref: "Event", required: true, index: true }, attendeeId: { type: String, required: true }, attendeeName: { type: String, required: true }, attendeeEmail: { type: String, required: true }, registeredAt: { type: Date, default: Date.now }, canceledAt: { type: Date, default: null } }, { timestamps: true });
+RegistrationSchema.index({ eventId: 1, attendeeId: 1 }, { unique: true, partialFilterExpression: { canceledAt: null } });
+export const Event = mongoose.models.Event || mongoose.model("Event", EventSchema);
+export const Registration = mongoose.models.Registration || mongoose.model("Registration", RegistrationSchema);

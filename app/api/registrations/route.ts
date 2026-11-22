@@ -1,0 +1,6 @@
+import { NextResponse } from "next/server";
+import db from "@/lib/db";
+import { Event, Registration } from "@/lib/models";
+import { currentUser } from "@/lib/auth";
+export async function GET() { const user = await currentUser(); if (!user) return NextResponse.json({ error: "Sign in required." }, { status: 401 }); if (user.role !== "attendee") return NextResponse.json({ error: "Attendee access required." }, { status: 403 }); await db(); const registrations = await Registration.find({ attendeeId: user.id, canceledAt: null }).populate("eventId").sort({ registeredAt: -1 }).lean(); return NextResponse.json({ registrations }); }
+export async function DELETE(req: Request) { const user = await currentUser(); if (!user) return NextResponse.json({ error: "Sign in required." }, { status: 401 }); if (user.role !== "attendee") return NextResponse.json({ error: "Attendee access required." }, { status: 403 }); await db(); const id = new URL(req.url).searchParams.get("id"); const r = await Registration.findOneAndUpdate({ _id: id, attendeeId: user.id, canceledAt: null }, { canceledAt: new Date() }, { new: true }); if (!r) return NextResponse.json({ error: "Active registration not found." }, { status: 404 }); await Event.updateOne({ _id: r.eventId }, { $inc: { activeCount: -1 } }); return NextResponse.json({ ok: true }); }
